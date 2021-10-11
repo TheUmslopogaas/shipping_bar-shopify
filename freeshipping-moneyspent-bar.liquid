@@ -1,0 +1,270 @@
+<div class="moneyspent-parent">
+  <div class="wrapper">
+    <div class="top-text">
+      <div id="discountLimit">
+        <span class="first-text">{{section.settings.first_txt}}</span>
+        <span class="second-text">{{section.settings.second_txt}}</span>
+        <span class="initial-disc">{{section.settings.discount_1}}$.</span>
+      </div>
+      <div id="price"></div>
+    </div>
+    <div class="progressbar-wrapper">
+      <div id="progressBar-money">
+        <div class="bar">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .moneyspent-parent .wrapper {
+    display: flex;
+    justify-conter: center;
+    gap: 20px;
+  }
+  .moneyspent-parent .top-text {
+    text-align: center;
+    font-size: 25px;
+    line-height: 1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 5px;
+    flex: 1;
+  }
+  .moneyspent-parent #discountLimit .second-text {
+    display: none;
+  }
+  .moneyspent-parent .progressbar-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+  .moneyspent-parent #progressBar-money {
+    width: 90%;
+    height: 10px;
+    background-color: #f1f1f1;
+    border: 1px solid #e4e4e4;
+    padding: 1px;
+    border-radius: 50px;
+    position: relative;
+  }
+  .moneyspent-parent #progressBar-money .bar {
+    height: 100%;
+    text-align: right;
+    padding: 0;
+    line-height: 22px;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 150px;
+    background: url("https://cdn.shopify.com/s/files/1/1652/8827/files/pbar-ani.gif") center/contain;
+  }
+</style>
+<!-- Dynamic Styles -->
+<style>
+  #shopify-section-{{section.id}} .moneyspent-parent {
+    background-color: {{section.settings.bg_color}};
+    padding: {{section.settings.spacing}};
+  }
+  #shopify-section-{{section.id}} .moneyspent-parent #progressBar-money {
+    max-width: {{section.settings.bar_width}}px;
+  }
+  #shopify-section-{{section.id}} .top-text {
+    color: {{section.settings.txt_color}};
+    font-size: {{section.settings.font_size}}px;
+  }
+  #shopify-section-{{section.id}} .top-text {color: {{section.settings.txt_color}}}
+  {% if section.settings.show_bar == false %}
+    #shopify-section-{{section.id}} .progressbar-wrapper {display: none;}
+    #shopify-section-{{section.id}} .top-text {justify-content: center;}
+  {% endif %}
+</style>
+<script>
+  let discountAmount = {{section.settings.discount_1}};
+  let discountAmountTwo = {{section.settings.discount_2}};
+  let moneySpent;
+  let percentage;
+  let haveToSpend;
+  let alsoBoughtSubmit = document.querySelectorAll(".cbb-also-bought-add-to-cart-button");
+  var cartQuantityIcon = document.querySelectorAll(".js-change-quantity");
+
+  // Initially checking the cart and setting up the values
+  window.onload = (event) => {
+    $.getJSON('/cart.json')
+    .done(function (data) {
+      updateSpent(data)
+    });
+
+    // updating the bar when pdp addtocart is clicked
+    let pdpSubmit = document.querySelectorAll("button.add_to_cart");
+    pdpSubmit.forEach(function(sub){
+      sub.addEventListener("click", function(e){
+        console.log('clicked pdp submit')
+        setTimeout(function(){
+          $.getJSON('/cart.json')
+          .done(function (data) {
+            updateSpent(data)
+          });
+        }, 1000)
+      })
+    })
+    
+    // updating the cart when cart quantity buttons are clicked
+    var cartQuantityIcon = document.getElementsByClassName(".js-change-quantity");
+    console.log(cartQuantityIcon)
+    cartQuantityIcon.forEach(function(quantity){
+      quantity.addEventListener("click", function(e){
+        console.log('clicked cart quantity icons')
+        setTimeout(function(){
+          $.getJSON('/cart.json')
+          .done(function (data) {
+            updateSpent(data)
+          });
+        }, 5000)
+      })
+    })
+    var sideCart = document.querySelectorAll(".tos_warning")[2];
+    sideCart.addEventListener("mouseenter", function(e){
+      var cartQuantityIcon = sideCart.querySelectorAll(".js-change-quantity");
+      console.log(cartQuantityIcon)
+    })
+  }
+  function updateSpent(data) {
+    console.log(data);
+    moneySpent = Math.round(data.total_price / 100);
+    percentage = Math.round((100 * moneySpent) / discountAmount);
+    percentageTwo = Math.round((100 * moneySpent) / discountAmountTwo);
+    haveToSpend = discountAmount - moneySpent;
+    haveToSpendTwo = discountAmountTwo - moneySpent;
+    console.log("money spent " + moneySpent);
+    console.log("percentage " + percentage + "%");
+    if (moneySpent == 0){
+      $('.bar').css("width", percentage + "%");
+      $('#price').html("your cart is empty!");
+      $('.top-text').css("justify-content", "center");
+      $('.progressbar-wrapper').css("display", "none");
+    } else if (moneySpent < discountAmount){
+      $('.bar').css("width", percentage + "%");
+      $('#price').text("Only {{cart.currency.symbol}}" + haveToSpend + " away!");
+      $('.top-text').css("justify-content", "flex-end");
+      $('.progressbar-wrapper').css("display", "flex");
+    } else if (discountAmount < moneySpent && discountAmountTwo > moneySpent){
+      $('.bar').css("width", percentageTwo + "%");
+      $('#price').text("{{cart.currency.symbol}}" + haveToSpendTwo + " away!");
+      $('.top-text').css("justify-content", "flex-end");
+      $('.progressbar-wrapper').css("display", "flex");
+      $('#discountLimit .second-text').css("display", "block");
+      $('#discountLimit .first-text').css("display", "none");
+      $('#discountLimit .initial-disc').css("display", "none");
+    } else if (discountAmount < moneySpent && discountAmountTwo < moneySpent){
+      $('.top-text').html("{{section.settings.congrats_msg}}");
+      $('.top-text').css("justify-content", "center");
+      $('.progressbar-wrapper').remove();
+    }
+  }
+</script>
+
+{% schema %}
+  {
+    "name": "Money Spent Bar",
+    "class": "custom-moneyspent-section",
+    "settings": [
+      {
+        "type": "select",
+        "id": "spacing",
+        "label": "Section Spacing",
+        "options": [
+          {
+            "value": "12px 0",
+            "label": "Tiny"
+          },
+          {
+            "value": "25px 0",
+            "label": "Medium"
+          },
+          {
+            "value": "40px 0",
+            "label": "Large"
+          }
+        ],
+        "default": "25px 0"
+      },
+      {
+        "type": "checkbox",
+        "id": "show_bar",
+        "label": "Show Percentage Bar",
+        "default": true
+      },
+      {
+        "type": "color",
+        "id": "txt_color",
+        "label": "Text Color",
+        "default": "#000",
+        "info": "Use Valid CSS Color or Color Code."
+      },
+      {
+        "type": "color",
+        "id": "bg_color",
+        "label": "Background Color",
+        "default": "#fece14",
+        "info": "Use Valid CSS Color or Color Code."
+      },
+      {
+        "type": "text",
+        "id": "discount_1",
+        "label": "First Discount Amount",
+        "default": "75"
+      },
+      {
+        "type": "text",
+        "id": "discount_2",
+        "label": "Second Discount Amount",
+        "default": "150",
+        "info": "You don't need to add currency symbol, just add the quantity number."
+      },
+      {
+        "type": "text",
+        "id": "first_txt",
+        "label": "First Discount Text",
+        "default": "Free priority shipping over"
+      },
+      {
+        "type": "text",
+        "id": "second_txt",
+        "label": "Second Discount Text",
+        "default": "You got priority shipping. Expedited shipping is"
+      },
+      {
+        "type": "text",
+        "id": "congrats_msg",
+        "label": "Congratulations Message",
+        "default": "Congratulations! You got Expedited shipping!"
+      },
+      {
+        "type": "range",
+        "id": "font_size",
+        "label": "Font Size",
+        "min": 12,
+        "max": 50,
+        "step": 1,
+        "default": 15
+      },
+      {
+        "type": "range",
+        "id": "bar_width",
+        "label": "Bar Width",
+        "min": 200,
+        "max": 1000,
+        "step": 50,
+        "default": 400
+      }
+    ],
+    "presets": [
+      {
+        "category": "Content",
+        "name":"Money Spent Bar"
+      }
+    ]
+  }
+{% endschema %}
