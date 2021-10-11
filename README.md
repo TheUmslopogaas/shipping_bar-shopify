@@ -1,4 +1,4 @@
-# shipping_bar-shopify
+# Shipping Bar Shopify
 Created a custom shipping bar / moneyspent bar for shopify store. (Turbo Theme)
 Made on top of turbo theme, so it'll require manual customization to work with other themes. 
 Main feature is two step shipping discount. You can set two different discount amount. 
